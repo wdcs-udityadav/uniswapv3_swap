@@ -17,7 +17,7 @@ contract MultiHopSwapTest is Test {
         multiHopSwap = new MultiHopSwap();
     }
 
-    function testExactInputSwap() public {
+    function testSwapExactInput() public {
         address user = vm.addr(1);
         deal(address(DAI), user, 500 * 1e18, true);
 
@@ -33,7 +33,7 @@ contract MultiHopSwapTest is Test {
         vm.stopPrank();
     }
 
-    function testSwapExactOutputSingle() public {
+    function testSwapExactOutput() public {
         address user = vm.addr(2);
         deal(address(DAI), user, 500 * 1e18, true);
 
