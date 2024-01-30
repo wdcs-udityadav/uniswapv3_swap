@@ -10,5 +10,4 @@ contract CounterTest is Test {
     function setUp() public {
         singleHop = new SingleHop();
     }
-
 }
