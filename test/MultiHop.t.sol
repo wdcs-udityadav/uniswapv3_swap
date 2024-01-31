@@ -43,7 +43,7 @@ contract MultiHopSwapTest is Test {
 
         IERC20(DAI).approve(address(multiHop), 450 * 1e18);
         uint256 amountIn = multiHop.swapExactOutput(172474261682099250, 450 * 1e18);
-        assertEq(IERC20(DAI).balanceOf(user), 500*1e18-amountIn);
+        assertEq(IERC20(DAI).balanceOf(user), 500 * 1e18 - amountIn);
         assertEq(IERC20(WETH9).balanceOf(user), 172474261682099250);
         vm.stopPrank();
     }
