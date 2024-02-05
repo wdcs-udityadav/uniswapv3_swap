@@ -10,14 +10,17 @@ import "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.s
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/base/LiquidityManagement.sol";
 
+import "forge-std/console.sol";
+
 contract Liquidity is IERC721Receiver {
     address public constant factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-    address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    // address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    // address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
-    uint24 public constant poolFee = 3000;
+    uint24 public constant poolFee = 100;
 
     INonfungiblePositionManager public constant nonfungiblePositionManager =
         INonfungiblePositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
@@ -44,6 +47,16 @@ contract Liquidity is IERC721Receiver {
         (,, address token0, address token1,,,, uint128 liquidity,,,,) = nonfungiblePositionManager.positions(_tokenId);
         deposits[_tokenId] = Deposit({owner: owner, liquidity: liquidity, token0: token0, token1: token1});
     }
+
+    // function _sendToOwner(uint256 _tokenId, uint256 _amount0, uint256 _amount1) internal {
+    //     address owner = deposits[_tokenId].owner;
+
+    //     address token0 = deposits[_tokenId].token0;
+    //     address token1 = deposits[_tokenId].token1;
+
+    //     TransferHelper.safeTransfer(token0, owner, _amount0);
+    //     TransferHelper.safeTransfer(token1, owner, _amount1);
+    // }
 
     function mintPosition(address _token0, address _token1, uint256 _amount0, uint256 _amount1, address _to)
         external
@@ -108,17 +121,7 @@ contract Liquidity is IERC721Receiver {
         });
         (amount0, amount1) = nonfungiblePositionManager.decreaseLiquidity(params);
 
-        _sendToOwner(_tokenId, amount0, amount1);
-    }
-
-    function _sendToOwner(uint256 _tokenId, uint256 _amount0, uint256 _amount1) internal {
-        address owner = deposits[_tokenId].owner;
-
-        address token0 = deposits[_tokenId].token0;
-        address token1 = deposits[_tokenId].token1;
-
-        TransferHelper.safeTransfer(token0, owner, _amount0);
-        TransferHelper.safeTransfer(token1, owner, _amount1);
+        // _sendToOwner(_tokenId, amount0, amount1);
     }
 
     function increaseLiquidity(uint256 _tokenId, uint256 _amount0, uint256 _amount1)
@@ -130,9 +133,8 @@ contract Liquidity is IERC721Receiver {
         TransferHelper.safeTransferFrom(deposits[_tokenId].token0, msg.sender, address(this), _amount0);
         TransferHelper.safeTransferFrom(deposits[_tokenId].token1, msg.sender, address(this), _amount1);
 
-        TransferHelper.safeApprove(deposits[_tokenId].token0,address(nonfungiblePositionManager), _amount0);
-        TransferHelper.safeApprove(deposits[_tokenId].token1,address(nonfungiblePositionManager), _amount1);
-
+        TransferHelper.safeApprove(deposits[_tokenId].token0, address(nonfungiblePositionManager), _amount0);
+        TransferHelper.safeApprove(deposits[_tokenId].token1, address(nonfungiblePositionManager), _amount1);
 
         INonfungiblePositionManager.IncreaseLiquidityParams memory params = INonfungiblePositionManager
             .IncreaseLiquidityParams({
@@ -152,5 +154,9 @@ contract Liquidity is IERC721Receiver {
         nonfungiblePositionManager.safeTransferFrom(address(this), msg.sender, _tokenId);
 
         delete deposits[_tokenId];
+    }
+
+    function getLiquidity(uint256 _tokenId) external view returns (uint128 lqdty) {
+        (,,,,,,, lqdty,,,,) = nonfungiblePositionManager.positions(_tokenId);
     }
 }
