@@ -69,5 +69,14 @@ contract FlashLoan is IUniswapV3FlashCallback, PeripheryPayments {
 
     function uniswapV3FlashCallback(uint256 fee0, uint256 fee1, bytes calldata data) external override {
         FlashCallbackData memory decoded = abi.decode(data, (FlashCallbackData));
+        CallbackValidation.verifyCallback(factory, decoded.poolKey);
+
+        address token0 = decoded.poolKey.token0;
+        address token1 = decoded.poolKey.token1;
+
+        TransferHelper.safeApprove(token0, address(swapRouter), decoded.amount0); 
+        TransferHelper.safeApprove(token1, address(swapRouter), decoded.amount1); 
+
+
     }
 }
