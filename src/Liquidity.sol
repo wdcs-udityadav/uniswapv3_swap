@@ -94,7 +94,7 @@ contract Liquidity is IERC721Receiver {
         (amount0, amount1) = nonfungiblePositionManager.collect(params);
     }
 
-    function decreaseLiquidity(uint256 _tokenId) external returns (uint256 amount0, uint256 amount1) {
+    function decreaseLiquidityByHalf(uint256 _tokenId) external returns (uint256 amount0, uint256 amount1) {
         require(msg.sender == deposits[_tokenId].owner, "caller is not owner");
 
         uint256 newLiquidity = deposits[_tokenId].liquidity / 2;
@@ -127,6 +127,13 @@ contract Liquidity is IERC721Receiver {
     {
         require(msg.sender == deposits[_tokenId].owner, "caller is not owner");
 
+        TransferHelper.safeTransferFrom(deposits[_tokenId].token0, msg.sender, address(this), _amount0);
+        TransferHelper.safeTransferFrom(deposits[_tokenId].token1, msg.sender, address(this), _amount1);
+
+        TransferHelper.safeApprove(deposits[_tokenId].token0,address(nonfungiblePositionManager), _amount0);
+        TransferHelper.safeApprove(deposits[_tokenId].token1,address(nonfungiblePositionManager), _amount1);
+
+
         INonfungiblePositionManager.IncreaseLiquidityParams memory params = INonfungiblePositionManager
             .IncreaseLiquidityParams({
             tokenId: _tokenId,
@@ -138,5 +145,12 @@ contract Liquidity is IERC721Receiver {
         });
 
         (liquidity, amount0, amount1) = nonfungiblePositionManager.increaseLiquidity(params);
+    }
+
+    function getNFT(uint256 _tokenId) external {
+        require(msg.sender == deposits[_tokenId].owner, "only owner allowed!");
+        nonfungiblePositionManager.safeTransferFrom(address(this), msg.sender, _tokenId);
+
+        delete deposits[_tokenId];
     }
 }
