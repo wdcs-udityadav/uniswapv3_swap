@@ -81,9 +81,6 @@ contract FlashLoan is IUniswapV3FlashCallback, PeripheryPayments {
         console.log("fee0: ", fee0);
         console.log("fee1: ", fee1);
 
-        console.log("DAI bal: ", DAI.balanceOf(address(this)) / 1e18);
-        console.log("usdt bal: ", USDT.balanceOf(address(this)) / 1e6);
-
         FlashCallbackData memory decoded = abi.decode(data, (FlashCallbackData));
         CallbackValidation.verifyCallback(factory, decoded.poolKey);
 
@@ -96,7 +93,7 @@ contract FlashLoan is IUniswapV3FlashCallback, PeripheryPayments {
         uint256 amount0Owed = LowGasSafeMath.add(decoded.amount0, fee0);
         uint256 amount1Owed = LowGasSafeMath.add(decoded.amount1, fee1);
 
-        console.log("amountIn1: ", decoded.amount1);
+        console.log("amountIn1: ", decoded.amount1 / 1e6);
 
         console.log("DAI bal: ", DAI.balanceOf(address(this)) / 1e18);
         console.log("usdt bal: ", USDT.balanceOf(address(this)) / 1e6);
@@ -115,31 +112,30 @@ contract FlashLoan is IUniswapV3FlashCallback, PeripheryPayments {
             })
         );
 
-        console.log("amountOut0: ", amountOut0);
+        console.log("amountOut0: ", amountOut0 / 1e18);
 
-        console.log("amountIn0: ", decoded.amount0);
         console.log("DAI bal: ", DAI.balanceOf(address(this)) / 1e18);
         console.log("usdt bal: ", USDT.balanceOf(address(this)) / 1e6);
 
+        console.log("amountIn0: ", decoded.amount0 / 1e18);
         uint256 amountOut1 = swapRouter.exactInputSingle(
             ISwapRouter.ExactInputSingleParams({
                 tokenIn: token0,
                 tokenOut: token1,
-                fee: decoded.poolFee2,
+                fee: decoded.poolFee3,
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: decoded.amount0,
+                // amountOutMinimum: amount1Owed,
                 amountOutMinimum: 0,
                 sqrtPriceLimitX96: 0
             })
         );
+        console.log("amountOut1: ", amountOut1 / 1e6);
 
         console.log("DAI bal: ", DAI.balanceOf(address(this)) / 1e18);
         console.log("usdt bal: ", USDT.balanceOf(address(this)) / 1e6);
-        console.log("amountOut1: ", amountOut1);
 
-        console.log("address this: ", address(this));
-        console.log("msg.sender: ", msg.sender);
         // TransferHelper.safeApprove(token0, address(this), amount0Owed);
         // TransferHelper.safeApprove(token1, address(this), amount1Owed);
 
@@ -148,16 +144,16 @@ contract FlashLoan is IUniswapV3FlashCallback, PeripheryPayments {
 
         console.log("paid");
 
-        if (amountOut0 > amount0Owed) {
-            uint256 profit0 = LowGasSafeMath.sub(amountOut0, amount0Owed);
-            // TransferHelper.safeApprove(token0, address(this), profit0);
-            pay(token0, address(this), decoded.payer, profit0);
-        }
+        // if (amountOut0 > amount0Owed) {
+        //     uint256 profit0 = LowGasSafeMath.sub(amountOut0, amount0Owed);
+        //     // TransferHelper.safeApprove(token0, address(this), profit0);
+        //     pay(token0, address(this), decoded.payer, profit0);
+        // }
 
-        if (amountOut1 > amount1Owed) {
-            uint256 profit1 = LowGasSafeMath.sub(amountOut1, amount1Owed);
-            // TransferHelper.safeApprove(token0, address(this), profit1);
-            pay(token1, address(this), decoded.payer, profit1);
-        }
+        // if (amountOut1 > amount1Owed) {
+        //     uint256 profit1 = LowGasSafeMath.sub(amountOut1, amount1Owed);
+        //     // TransferHelper.safeApprove(token0, address(this), profit1);
+        //     pay(token1, address(this), decoded.payer, profit1);
+        // }
     }
 }
