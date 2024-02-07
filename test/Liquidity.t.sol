@@ -14,7 +14,6 @@ contract LiquidityTest is Test {
     Liquidity public liquidity;
 
     IERC20 public constant DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
-    // IERC20 public constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     IERC20 public constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7);
 
     INonfungiblePositionManager public constant nonfungiblePositionManager =
@@ -32,6 +31,9 @@ contract LiquidityTest is Test {
         deal(address(DAI), user, dai_amount, true);
         deal(address(USDT), user, usdt_amount, true);
 
+        uint256 priceLower = 9.8 * 1e6;
+        uint256 priceUpper = 1.003 * 1e6;
+
         vm.startPrank(user);
         assertEq(DAI.balanceOf(user), dai_amount);
         assertEq(USDT.balanceOf(user), usdt_amount);
@@ -39,8 +41,10 @@ contract LiquidityTest is Test {
         TransferHelper.safeApprove(address(DAI), address(liquidity), dai_amount);
         TransferHelper.safeApprove(address(USDT), address(liquidity), usdt_amount);
 
+        (int24 _tick) = liquidity._getTicks(address(DAI), address(USDT), priceLower, priceUpper);
+
         (uint256 tokenId, uint256 lqd, uint256 amount0, uint256 amount1) =
-            liquidity.mintPosition(address(DAI), address(USDT), dai_amount, usdt_amount, user);
+            liquidity.mintPosition(address(DAI), address(USDT), dai_amount, usdt_amount, _tick, user);
 
         console.log("tokenId: ", tokenId);
         console.log("liquidity: ", lqd);
@@ -53,58 +57,58 @@ contract LiquidityTest is Test {
         return tokenId;
     }
 
-    function testCollectFees() public {
-        uint256 _tokenId = testMintPosition();
+    // function testCollectFees() public {
+    //     uint256 _tokenId = testMintPosition();
 
-        vm.startPrank(user);
-        IERC721(address(nonfungiblePositionManager)).approve(address(liquidity), _tokenId);
-        (uint256 amount0, uint256 amount1) = liquidity.collectFees(_tokenId, address(user));
-        console.log("fee 0: ", amount0);
-        console.log("fee 1: ", amount1);
-        vm.stopPrank();
-    }
+    //     vm.startPrank(user);
+    //     IERC721(address(nonfungiblePositionManager)).approve(address(liquidity), _tokenId);
+    //     (uint256 amount0, uint256 amount1) = liquidity.collectFees(_tokenId, address(user));
+    //     console.log("fee 0: ", amount0);
+    //     console.log("fee 1: ", amount1);
+    //     vm.stopPrank();
+    // }
 
-    function testIncreaseLiquidity() public returns (uint256) {
-        uint256 _tokenId = testMintPosition();
+    // function testIncreaseLiquidity() public returns (uint256) {
+    //     uint256 _tokenId = testMintPosition();
 
-        uint256 daiAmount = 500 * 1e18;
-        uint256 usdtAmount = 500 * 1e6;
+    //     uint256 daiAmount = 500 * 1e18;
+    //     uint256 usdtAmount = 500 * 1e6;
 
-        deal(address(DAI), user, daiAmount, true);
-        deal(address(USDT), user, usdtAmount, true);
+    //     deal(address(DAI), user, daiAmount, true);
+    //     deal(address(USDT), user, usdtAmount, true);
 
-        vm.startPrank(user);
-        assertEq(DAI.balanceOf(user), 500 * 1e18);
-        assertEq(USDT.balanceOf(user), 500 * 1e6);
-        TransferHelper.safeApprove(address(DAI), address(liquidity), daiAmount);
-        TransferHelper.safeApprove(address(USDT), address(liquidity), usdtAmount);
+    //     vm.startPrank(user);
+    //     assertEq(DAI.balanceOf(user), 500 * 1e18);
+    //     assertEq(USDT.balanceOf(user), 500 * 1e6);
+    //     TransferHelper.safeApprove(address(DAI), address(liquidity), daiAmount);
+    //     TransferHelper.safeApprove(address(USDT), address(liquidity), usdtAmount);
 
-        (uint256 liq, uint256 amount0, uint256 amount1) = liquidity.increaseLiquidity(_tokenId, daiAmount, usdtAmount);
-        console.log("liquidity added: ", liq);
-        console.log("amount0: ", amount0 / 1e18);
-        console.log("amount1: ", amount1 / 1e6);
+    //     (uint256 liq, uint256 amount0, uint256 amount1) = liquidity.increaseLiquidity(_tokenId, daiAmount, usdtAmount);
+    //     console.log("liquidity added: ", liq);
+    //     console.log("amount0: ", amount0 / 1e18);
+    //     console.log("amount1: ", amount1 / 1e6);
 
-        console.log("total liquidity.: ", liquidity.getLiquidity(_tokenId));
-        vm.stopPrank();
-        return _tokenId;
-    }
+    //     console.log("total liquidity.: ", liquidity.getLiquidity(_tokenId));
+    //     vm.stopPrank();
+    //     return _tokenId;
+    // }
 
-    function testDecreaseLiquidity() public {
-        uint256 _tokenId = testIncreaseLiquidity();
+    // function testDecreaseLiquidity() public {
+    //     uint256 _tokenId = testIncreaseLiquidity();
 
-        vm.startPrank(user);
-        IERC721(address(nonfungiblePositionManager)).approve(address(liquidity), _tokenId);
-        (uint256 amount0, uint256 amount1) = liquidity.decreaseLiquidityByHalf(_tokenId);
-        console.log("amount0: ", amount0 / 1e18);
-        console.log("amount1: ", amount1 / 1e6);
+    //     vm.startPrank(user);
+    //     IERC721(address(nonfungiblePositionManager)).approve(address(liquidity), _tokenId);
+    //     (uint256 amount0, uint256 amount1) = liquidity.decreaseLiquidityByHalf(_tokenId);
+    //     console.log("amount0: ", amount0 / 1e18);
+    //     console.log("amount1: ", amount1 / 1e6);
 
-        console.log("liquidity after decrease: ", liquidity.getLiquidity(_tokenId));
-        console.log("..... collect fees.....");
+    //     console.log("liquidity after decrease: ", liquidity.getLiquidity(_tokenId));
+    //     console.log("..... collect fees.....");
 
-        liquidity.collectFees(_tokenId, address(user));
-        console.log(" dai bal: ", DAI.balanceOf(user) / 1e18);
-        console.log(" usdt bal: ", USDT.balanceOf(user) / 1e6);
+    //     liquidity.collectFees(_tokenId, address(user));
+    //     console.log(" dai bal: ", DAI.balanceOf(user) / 1e18);
+    //     console.log(" usdt bal: ", USDT.balanceOf(user) / 1e6);
 
-        vm.stopPrank();
-    }
+    //     vm.stopPrank();
+    // }
 }

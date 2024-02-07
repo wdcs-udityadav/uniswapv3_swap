@@ -5,19 +5,17 @@ pragma abicoder v2;
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-// import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/base/LiquidityManagement.sol";
+import "@uniswap/v3-periphery/contracts/libraries/PoolAddress.sol";
 
 import "forge-std/console.sol";
 
 contract Liquidity is IERC721Receiver {
-    address public constant factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-    // address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address public constant factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
 
     address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    // address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     uint24 public constant poolFee = 100;
@@ -48,26 +46,72 @@ contract Liquidity is IERC721Receiver {
         deposits[_tokenId] = Deposit({owner: owner, liquidity: liquidity, token0: token0, token1: token1});
     }
 
-    // function _sendToOwner(uint256 _tokenId, uint256 _amount0, uint256 _amount1) internal {
-    //     address owner = deposits[_tokenId].owner;
+    function sqrt(uint256 y) internal pure returns (uint256 z) {
+        if (y > 3) {
+            z = y;
+            uint256 x = y / 2 + 1;
+            while (x < z) {
+                z = x;
+                x = (y / x + x) / 2;
+            }
+        } else if (y != 0) {
+            z = 1;
+        }
+    }
 
-    //     address token0 = deposits[_tokenId].token0;
-    //     address token1 = deposits[_tokenId].token1;
+    function log2(uint256 x) internal pure returns (int256) {
+        int256 log2Value = 0;
+        while (x > 1) {
+            x >>= 1;
+            log2Value += 1;
+        }
+        return log2Value;
+    }
 
-    //     TransferHelper.safeTransfer(token0, owner, _amount0);
-    //     TransferHelper.safeTransfer(token1, owner, _amount1);
-    // }
-
-    function mintPosition(address _token0, address _token1, uint256 _amount0, uint256 _amount1, address _to)
+    function _getTicks(address _token0, address _token1, uint256 priceLower, uint256 priceUpper)
         external
-        returns (uint256 tokenId, uint256 liquidity, uint256 amount0, uint256 amount1)
+        view
+        returns (int24)
     {
+        PoolAddress.PoolKey memory poolKey = PoolAddress.getPoolKey(_token0, _token1, poolFee);
+        IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
+        // int24 tickSpacing = pool.tickSpacing();
+        console.log("token0:", pool.token0());
+        console.log("token1:", pool.token1());
+        (uint160 sqrtprice, int24 tick,,,,,) = pool.slot0();
+
+        console.log("sqrtPrice:", uint256(sqrtprice));
+        console.log("tick:", uint256(tick));
+
+        // console.log("priceLower: ",priceLower);
+        // console.log("priceUpper: ",priceUpper);
+
+        // _tickLower = int24(log2((sqrt(priceLower) * 10001) / 10000));
+        // _tickUpper = int24(log2((sqrt(priceUpper) * 10001) / 10000));
+
+        // console.log("_tickLower: ", uint256(_tickLower));
+        // console.log("_tickUpper: ", uint256(_tickUpper));
+
+        // require(_tickLower % tickSpacing == 0, "tick lower");
+        // require(_tickUpper % tickSpacing == 0, "tick upper");
+        return tick;
+    }
+
+    function mintPosition(
+        address _token0,
+        address _token1,
+        uint256 _amount0,
+        uint256 _amount1,
+        // int24 _tickLower,
+        int24 tick,
+        address _to
+    ) external returns (uint256 tokenId, uint256 liquidity, uint256 amount0, uint256 amount1) {
         INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
             token0: _token0,
             token1: _token1,
             fee: poolFee,
-            tickLower: TickMath.MIN_TICK,
-            tickUpper: TickMath.MAX_TICK,
+            tickLower:  tick-100,
+            tickUpper:  tick+100,
             amount0Desired: _amount0,
             amount1Desired: _amount1,
             amount0Min: 0,
