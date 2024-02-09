@@ -46,26 +46,13 @@ contract Liquidity is IERC721Receiver {
         deposits[_tokenId] = Deposit({owner: owner, liquidity: liquidity, token0: token0, token1: token1});
     }
 
-    function sqrt(uint256 y) internal pure returns (uint256 z) {
-        if (y > 3) {
-            z = y;
-            uint256 x = y / 2 + 1;
-            while (x < z) {
-                z = x;
-                x = (y / x + x) / 2;
-            }
-        } else if (y != 0) {
-            z = 1;
-        }
-    }
+    function getSqrtPriceX96(address _token0, address _token1) external view returns (uint160 sqrtPriceX96) {
+        require(_token0 != _token1, "tokens must be different");
+        PoolAddress.PoolKey memory poolKey = PoolAddress.getPoolKey(_token0, _token1, poolFee);
 
-    function log2(uint256 x) internal pure returns (int256) {
-        int256 log2Value = 0;
-        while (x > 1) {
-            x >>= 1;
-            log2Value += 1;
-        }
-        return log2Value;
+        address pool = PoolAddress.computeAddress(factory, poolKey);
+        console.log("pool: ",pool);
+        (sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
     }
 
     function _getTicks(address _token0, address _token1, uint256 priceLower, uint256 priceUpper)
@@ -110,8 +97,8 @@ contract Liquidity is IERC721Receiver {
             token0: _token0,
             token1: _token1,
             fee: poolFee,
-            tickLower:  tick-100,
-            tickUpper:  tick+100,
+            tickLower: tick - 100,
+            tickUpper: tick + 100,
             amount0Desired: _amount0,
             amount1Desired: _amount1,
             amount0Min: 0,

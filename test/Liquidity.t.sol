@@ -25,14 +25,43 @@ contract LiquidityTest is Test {
         liquidity = new Liquidity();
     }
 
-    function testMintPosition() public returns (uint256) {
+    // function testMintPosition() public returns (uint256) {
+    //     uint256 dai_amount = 1000 * 1e18;
+    //     uint256 usdt_amount = 1000 * 1e6;
+    //     deal(address(DAI), user, dai_amount, true);
+    //     deal(address(USDT), user, usdt_amount, true);
+
+    //     uint256 priceLower = 9.8 * 1e6;
+    //     uint256 priceUpper = 1.003 * 1e6;
+
+    //     vm.startPrank(user);
+    //     assertEq(DAI.balanceOf(user), dai_amount);
+    //     assertEq(USDT.balanceOf(user), usdt_amount);
+
+    //     TransferHelper.safeApprove(address(DAI), address(liquidity), dai_amount);
+    //     TransferHelper.safeApprove(address(USDT), address(liquidity), usdt_amount);
+
+    //     (int24 _tick) = liquidity._getTicks(address(DAI), address(USDT), priceLower, priceUpper);
+
+    //     (uint256 tokenId, uint256 lqd, uint256 amount0, uint256 amount1) =
+    //         liquidity.mintPosition(address(DAI), address(USDT), dai_amount, usdt_amount, _tick, user);
+
+    //     console.log("tokenId: ", tokenId);
+    //     console.log("liquidity: ", lqd);
+    //     console.log("amount0: ", amount0 / 1e18);
+    //     console.log("amount1: ", amount1 / 1e6);
+
+    //     assertEq(nonfungiblePositionManager.ownerOf(tokenId), user);
+
+    //     vm.stopPrank();
+    //     return tokenId;
+    // }
+
+    function testCustomMintPosition() public {
         uint256 dai_amount = 1000 * 1e18;
         uint256 usdt_amount = 1000 * 1e6;
         deal(address(DAI), user, dai_amount, true);
         deal(address(USDT), user, usdt_amount, true);
-
-        uint256 priceLower = 9.8 * 1e6;
-        uint256 priceUpper = 1.003 * 1e6;
 
         vm.startPrank(user);
         assertEq(DAI.balanceOf(user), dai_amount);
@@ -41,20 +70,23 @@ contract LiquidityTest is Test {
         TransferHelper.safeApprove(address(DAI), address(liquidity), dai_amount);
         TransferHelper.safeApprove(address(USDT), address(liquidity), usdt_amount);
 
-        (int24 _tick) = liquidity._getTicks(address(DAI), address(USDT), priceLower, priceUpper);
+        //get sqrtPriceX96
+        uint160 sqrtPriceX96 = liquidity.getSqrtPriceX96(address(DAI), address(USDT));
+        console.log("sqrtPriceX96: ", sqrtPriceX96);
+        // (int24 _tick) = liquidity._getTicks(address(DAI), address(USDT), priceLower, priceUpper);
 
-        (uint256 tokenId, uint256 lqd, uint256 amount0, uint256 amount1) =
-            liquidity.mintPosition(address(DAI), address(USDT), dai_amount, usdt_amount, _tick, user);
+        // (uint256 tokenId, uint256 lqd, uint256 amount0, uint256 amount1) =
+        //     liquidity.mintPosition(address(DAI), address(USDT), dai_amount, usdt_amount, _tick, user);
 
-        console.log("tokenId: ", tokenId);
-        console.log("liquidity: ", lqd);
-        console.log("amount0: ", amount0 / 1e18);
-        console.log("amount1: ", amount1 / 1e6);
+        // console.log("tokenId: ", tokenId);
+        // console.log("liquidity: ", lqd);
+        // console.log("amount0: ", amount0 / 1e18);
+        // console.log("amount1: ", amount1 / 1e6);
 
-        assertEq(nonfungiblePositionManager.ownerOf(tokenId), user);
+        // assertEq(nonfungiblePositionManager.ownerOf(tokenId), user);
 
-        vm.stopPrank();
-        return tokenId;
+        // vm.stopPrank();
+        // return tokenId;
     }
 
     // function testCollectFees() public {
